@@ -1,8 +1,6 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
 
-export default function HeaderCatalogo({ maoImg, onVoltar, filtroNome, setFiltroNome, totalItens }) {
-  const navigate = useNavigate()
+export default function HeaderCatalogo({ maoImg, onVoltar, filtroNome, setFiltroNome, totalItens, onIrParaMapa }) {
   return (
     <header>
       <button
@@ -23,7 +21,7 @@ export default function HeaderCatalogo({ maoImg, onVoltar, filtroNome, setFiltro
       <div className="mapa-btn-container">
         <button
           id="mapBtn"
-          onClick={() => navigate('/mapa')}
+          onClick={onIrParaMapa}
         >
           <img src={maoImg} alt="ícone mapa" className="icon" />
           MAPA

@@ -10,21 +10,52 @@ import carneImg from '../assets/images/carne.png'
 import HeaderCatalogo from '../components/HeaderCatalogo'
 import FiltroCategorias from '../components/FiltroCategorias'
 import ProdutoCard from '../components/ProdutoCard'
+import { getProducts } from '../services/api'
 
-const produtosIniciais = [
-  { id: 1, nome: "Arroz Agulhinha Broto Legal 5kg Tipo 1", preco: 23.9, img: arroz1Img, qtd: 0, estoque: 10, categoria: "Alimentos" },
-  { id: 2, nome: "Arroz Agulhinha Prato Fino 5kg Tipo 1", preco: 27.9, img: arroz2Img, qtd: 0, estoque: 8, categoria: "Alimentos" },
-  { id: 3, nome: "Achocolatado em Pó Original Toddy 370G", preco: 9.75, img: achocolatadoImg, qtd: 0, estoque: 5, categoria: "Alimentos" },
-  { id: 4, nome: "Repelente OFF! Family Aerossol 170ml", preco: 36.8, img: repelenteImg, qtd: 0, estoque: 7, categoria: "Limpeza" },
-  { id: 5, nome: "Sabão em Pó Omo Lavagem Perfeita 4kg", preco: 47.9, img: sabaoImg, qtd: 0, estoque: 9, categoria: "Limpeza" },
-  { id: 6, nome: "Carne Bovina Maturatta Bife Ancho 1,600 kg", preco: 73.44, img: carneImg, qtd: 0, estoque: 6, categoria: "Carnes e Frios" },
-]
+// Mapeamento de IDs para imagens
+const imageMap = {
+  1: arroz1Img,
+  2: arroz2Img,
+  3: achocolatadoImg,
+  4: repelenteImg,
+  5: sabaoImg,
+  6: carneImg
+}
 
 export default function CatalogoPage() {
   const navigate = useNavigate()
-  const [produtos, setProdutos] = useState(produtosIniciais)
+  const [produtos, setProdutos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filtroNome, setFiltroNome] = useState('')
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState([])
+
+  // Carrega produtos do backend
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const productsData = await getProducts()
+        // Mapeia dados do backend para formato do frontend
+        const produtosFormatados = productsData.map(p => ({
+          id: p.id,
+          nome: p.name,
+          preco: p.preco,
+          img: imageMap[p.id] || arroz1Img, // Fallback para primeira imagem
+          qtd: 0,
+          estoque: p.estoque,
+          categoria: p.category
+        }))
+        setProdutos(produtosFormatados)
+      } catch (err) {
+        console.error('Erro ao carregar produtos:', err)
+        setError('Erro ao carregar produtos. Verifique se a API está rodando.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProducts()
+  }, [])
 
   const handleVoltar = () => {
     document.body.classList.add('animate-fade-out')
@@ -70,6 +101,29 @@ export default function CatalogoPage() {
     produtos.reduce((acc, p) => acc + (p.qtd * p.preco), 0)
   , [produtos])
 
+  const handleIrParaMapa = () => {
+    // Filtra produtos selecionados (qtd > 0)
+    const produtosSelecionados = produtos.filter(p => p.qtd > 0)
+    // Navega para o mapa passando os produtos selecionados
+    navigate('/mapa', { state: { produtosSelecionados } })
+  }
+
+  if (loading) {
+    return (
+      <section className="tela-inicial" style={{ width: '100%', height: '100vh', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <p>Carregando produtos...</p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="tela-inicial" style={{ width: '100%', height: '100vh', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: 'red' }}>{error}</p>
+      </section>
+    )
+  }
+
   return (
     <section className="tela-inicial" style={{ width: '100%', height: '100vh', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
       <HeaderCatalogo
@@ -78,6 +132,7 @@ export default function CatalogoPage() {
         filtroNome={filtroNome}
         setFiltroNome={setFiltroNome}
         totalItens={totalItens}
+        onIrParaMapa={handleIrParaMapa}
       />
 
       <div className="conteudo-catalogo">
